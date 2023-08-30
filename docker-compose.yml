@@ -1,0 +1,59 @@
+version: '2'
+volumes:
+  wordpress-db:
+  wordpress-data:
+
+services:
+  mariadb:
+    container_name: mariadb
+    image: amd64/mariadb:10.2
+    environment:
+      MYSQL_DATABASE: wordpress
+      MYSQL_PASSWORD: Chang3M3
+      MYSQL_ROOT_PASSWORD: Change3M34ls0
+      MYSQL_USER: wordpress
+    volumes:
+    - wordpress-db:/var/lib/mysql
+
+  memcached:
+    container_name: memcache
+    image: amd64/memcached:1.5
+
+  nginx:
+    build: nginx/
+    container_name: nginx
+    image: pedro/wordpress:nginx
+    ports:
+    - 32716:443/tcp
+    - 32715:80/tcp
+    links:
+    - memcached:memcached
+    - wordpress:wordpress
+    volumes:
+    - wordpress-data:/var/www/html:rw
+
+  wordpress:
+    build: php-fpm/
+    container_name: wordpress
+    image: pedro/wordpress:php-fpm
+    environment:
+      WORDPRESS_DB_HOST: mariadb
+      WORDPRESS_DB_NAME: wordpress
+      WORDPRESS_DB_USER: wordpress
+      WORDPRESS_DB_PASSWORD: Chang3M3
+    links:
+    - memcached:memcached
+    - mariadb:mysql
+    volumes:
+    - wordpress-data:/var/www/html
+
+  cadvisor:
+    image: google/cadvisor
+    ports:
+      - 8080:8080
+    restart: always
+    volumes:
+      - /:/rootfs:ro
+      - /var/run:/var/run:rw
+      - /sys:/sys:ro
+      - /var/lib/docker/:/var/lib/docker:ro
